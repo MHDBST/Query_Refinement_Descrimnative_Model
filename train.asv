@@ -1,0 +1,176 @@
+function train(n)
+%initialize();
+
+train_file = fopen('all_train.txt','r');
+line = textscan(train_file,'%s %s %s',n,'Delimiter','\t');
+
+sumF = 0 ;
+for i=1:length(line{1})
+    display(i);
+    [h{i} f(i)] = calculate(line{1}(i),line{2}(i),1);
+    sumF = sumF + f(i);
+    
+end
+
+sumH = zeros(1,length(h{1}));
+for i=1:length(line{1})
+    for j=1:length(h{i})
+        display(i);
+        sumH(j) = sumH(j)  + h{i}(j);
+    end
+end
+findLambda(sumH,sumF)
+
+
+end
+
+function [h f] = calculate(x,y,o)
+
+[str(1), rmn] = strtok(y{1},' ');
+while (length(str{end})~=0)
+      [str(end+1), rmn] = strtok(rmn,' ');
+end
+
+[str2(1), rmn] = strtok(x{1},' ');
+while (length(str2{end})~=0)
+      [str2(end+1), rmn] = strtok(rmn,' ');
+end
+
+for j=1:length(str)
+    
+    
+    operation =1;
+    c =  condition(str2{i},str{i},operation);
+    
+    for k=1:length(c)
+        
+        h(k) = c(k);
+        f = bigram(str2{i},str{i});
+        
+        
+    end
+    
+    
+    
+end
+
+
+
+
+end
+
+
+function initialize()
+stopwords_cellstring={'a', 'about', 'above', 'above', 'across', 'after', ...
+    'afterwards', 'again', 'against', 'all', 'almost', 'alone', 'along', ...
+    'already', 'also','although','always','am','among', 'amongst', 'amoungst', ...
+    'amount', 'an', 'and', 'another', 'any','anyhow','anyone','anything','anyway', ...
+    'anywhere', 'are', 'around', 'as', 'at', 'back','be','became', 'because','become',...
+    'becomes', 'becoming', 'been', 'before', 'beforehand', 'behind', 'being', 'below',...
+    'beside', 'besides', 'between', 'beyond', 'bill', 'both', 'bottom','but', 'by',...
+    'call', 'can', 'cannot', 'cant', 'co', 'con', 'could', 'couldnt', 'cry', 'de',...
+    'describe', 'detail', 'do', 'done', 'down', 'due', 'during', 'each', 'eg', 'eight',...
+    'either', 'eleven','else', 'elsewhere', 'empty', 'enough', 'etc', 'even', 'ever', ...
+    'every', 'everyone', 'everything', 'everywhere', 'except', 'few', 'fifteen', 'fify',...
+    'fill', 'find', 'fire', 'first', 'five', 'for', 'former', 'formerly', 'forty', 'found',...
+    'four', 'from', 'front', 'full', 'further', 'get', 'give', 'go', 'had', 'has', 'hasnt',...
+    'have', 'he', 'hence', 'her', 'here', 'hereafter', 'hereby', 'herein', 'hereupon', ...
+    'hers', 'herself', 'him', 'himself', 'his', 'how', 'however', 'hundred', 'ie', 'if',...
+    'in', 'inc', 'indeed', 'interest', 'into', 'is', 'it', 'its', 'itself', 'keep', 'last',...
+    'latter', 'latterly', 'least', 'less', 'ltd', 'made', 'many', 'may', 'me', 'meanwhile',...
+    'might', 'mill', 'mine', 'more', 'moreover', 'most', 'mostly', 'move', 'much', 'must',...
+    'my', 'myself', 'name', 'namely', 'neither', 'never', 'nevertheless', 'next', 'nine',...
+    'no', 'nobody', 'none', 'noone', 'nor', 'not', 'nothing', 'now', 'nowhere', 'of', 'off',...
+    'often', 'on', 'once', 'one', 'only', 'onto', 'or', 'other', 'others', 'otherwise',...
+    'our', 'ours', 'ourselves', 'out', 'over', 'own','part', 'per', 'perhaps', 'please',...
+    'put', 'rather', 're', 'same', 'see', 'seem', 'seemed', 'seeming', 'seems', 'serious',...
+    'several', 'she', 'should', 'show', 'side', 'since', 'sincere', 'six', 'sixty', 'so',...
+    'some', 'somehow', 'someone', 'something', 'sometime', 'sometimes', 'somewhere', ...
+    'still', 'such', 'system', 'take', 'ten', 'than', 'that', 'the', 'their', 'them',...
+    'themselves', 'then', 'thence', 'there', 'thereafter', 'thereby', 'therefore', ...
+    'therein', 'thereupon', 'these', 'they', 'thickv', 'thin', 'third', 'this', 'those',...
+    'though', 'three', 'through', 'throughout', 'thru', 'thus', 'to', 'together', 'too',...
+    'top', 'toward', 'towards', 'twelve', 'twenty', 'two', 'un', 'under', 'until', 'up',...
+    'upon', 'us', 'very', 'via', 'was', 'we', 'well', 'were', 'what', 'whatever', 'when',...
+    'whence', 'whenever', 'where', 'whereafter', 'whereas', 'whereby', 'wherein',...
+    'whereupon', 'wherever', 'whether', 'which', 'while', 'whither', 'who', 'whoever',...
+    'whole', 'whom', 'whose', 'why', 'will', 'with', 'within', 'without', 'would', 'yet',...
+    'you', 'your', 'yours', 'yourself', 'yourselves', 'the'};
+
+global mapBigram;
+global mapUnigram;
+global mapStopWords ;
+
+
+[perBigram, wordsBigram, extra] = textread(['./','bigram.out'],'%s %s %s','delimiter','\t');
+[perUnigram, wordsUnigram,extra] = textread(['./','unigram.out'],'%s %s %s','delimiter','\t');
+
+for i=1:length(wordsBigram)
+    val{i} = {[perBigram(i);i]};
+end
+
+mapBigram = containers.Map(wordsBigram,val);
+
+for i=1:length(wordsUnigram)
+    val2{i} = {[perUnigram(i);i]};
+end
+mapUnigram = containers.Map(wordsUnigram,val2);
+
+
+mapStopWords = containers.Map(stopwords_cellstring,[1:length(stopwords_cellstring)]);
+
+
+end
+
+function c = condition(x,y,operation)
+global mapUnigram;
+global mapStopWords;
+
+c = zeros(1,2*operation);
+%ind = find(ismember(wordsUnigram,y));
+if (isKey(mapUnigram,y))
+    c(operation)=1;
+end
+if(isKey(mapStopWords,x))
+    c(2*operation)=1;
+end
+if ( isnan(str2double(x)))
+    c(2*operation)=1;
+end
+if ( ~isnan(str2double(x)))
+    c(2*operation)=1;
+end
+
+
+
+
+
+
+
+end
+function c = condition2(x,y,operation)
+global mapUnigram;
+global mapStopWords;
+
+c = zeros(1,2);
+if (isKey(mapUnigram,y))
+    c(1)=1;
+end
+if(isKey(mapStopWords,x))
+    c(2)=1;
+end
+end
+
+function per= bigram(x,y)
+
+global mapBigram;
+
+str = strcat(x,' ',y);
+
+if( ~isKey(mapBigram,str))
+    per = 0.0001;
+else
+    per = mapBigram(str);
+end
+
+end
